@@ -15,9 +15,12 @@ exports.sleep = sleep;
 ;
 class BlockingQueue {
     constructor(interval = 50) {
+        this.interval = interval;
         this.queue = [];
         this.enable = true;
         this.stopimmediate = true;
+        this.lockWaitNum = 0;
+        this.lockFinishNum = 0;
         (() => __awaiter(this, void 0, void 0, function* () {
             while (true) {
                 let item = this.queue.shift();
@@ -33,8 +36,11 @@ class BlockingQueue {
                     catch (error) {
                         item.reject(error);
                     }
+                    yield sleep(50);
                 }
-                yield sleep(interval);
+                else {
+                    yield sleep(interval);
+                }
             }
         }))();
     }
@@ -65,6 +71,26 @@ class BlockingQueue {
     }
     clear() {
         this.queue = [];
+    }
+    lock() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.lockWaitNum++;
+            let _forNum = this.lockWaitNum;
+            yield this.push(() => __awaiter(this, void 0, void 0, function* () {
+                while (true) {
+                    if (_forNum === this.lockFinishNum) {
+                        break;
+                    }
+                    if (!this.enable) {
+                        break;
+                    }
+                    yield sleep(100);
+                }
+            }));
+        });
+    }
+    unlock() {
+        this.lockFinishNum++;
     }
 }
 exports.BlockingQueue = BlockingQueue;

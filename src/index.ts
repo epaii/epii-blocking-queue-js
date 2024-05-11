@@ -9,8 +9,10 @@ export class BlockingQueue {
     queue: Array<TaskItem> = [];
     enable: boolean = true;
     stopimmediate: boolean = true;
+    lockWaitNum: number = 0;
+    lockFinishNum: number = 0;
 
-    constructor(interval: number = 50) {
+    constructor( private interval: number = 50) {
         (async () => {
             while (true) {
                 let item = this.queue.shift();
@@ -27,7 +29,7 @@ export class BlockingQueue {
                         item.reject(error);
                     }
                     await sleep(50);
-                }else{
+                } else {
                     await sleep(interval);
                 }
 
@@ -64,6 +66,24 @@ export class BlockingQueue {
     }
     clear() {
         this.queue = [];
+    }
+    async lock() {
+        this.lockWaitNum++;
+        let _forNum = this.lockWaitNum;
+        await this.push(async () => {
+            while (true) {
+                if(_forNum === this.lockFinishNum){
+                    break;
+                }
+                if(!this.enable){
+                    break;
+                }
+                await sleep(100)
+            }
+        })
+    }
+    unlock(){
+       this.lockFinishNum++; 
     }
 }
 

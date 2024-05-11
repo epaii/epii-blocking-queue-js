@@ -11,6 +11,7 @@ export class BlockingQueue {
     stopimmediate: boolean = true;
     lockWaitNum: number = 0;
     lockFinishNum: number = 0;
+    _clearAlllock:boolean = false;
 
     constructor(private interval: number = 50) {
         (async () => {
@@ -68,6 +69,7 @@ export class BlockingQueue {
         this.queue = [];
     }
     async lock() {
+        this._clearAlllock = false;
         this.lockWaitNum++;
         let _forNum = this.lockWaitNum;
         await this.push(async () => {
@@ -75,16 +77,19 @@ export class BlockingQueue {
                 if (_forNum - 1 === this.lockFinishNum) {
                     break;
                 }
-                if (!this.enable) {
+                if (this._clearAlllock) {
                     this.unlock();
-                    throw new Error("thread is stoped")
+                    throw new Error("thread is clear")
                 }
-                await sleep(100)
+                await sleep(100);
             }
         })
     }
     unlock() {
         this.lockFinishNum++;
+    }
+    clearAllWaitLock(){
+        this._clearAlllock = true;
     }
 }
 

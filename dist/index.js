@@ -21,6 +21,7 @@ class BlockingQueue {
         this.stopimmediate = true;
         this.lockWaitNum = 0;
         this.lockFinishNum = 0;
+        this._clearAlllock = false;
         (() => __awaiter(this, void 0, void 0, function* () {
             while (true) {
                 let item = this.queue.shift();
@@ -74,6 +75,7 @@ class BlockingQueue {
     }
     lock() {
         return __awaiter(this, void 0, void 0, function* () {
+            this._clearAlllock = false;
             this.lockWaitNum++;
             let _forNum = this.lockWaitNum;
             yield this.push(() => __awaiter(this, void 0, void 0, function* () {
@@ -81,9 +83,9 @@ class BlockingQueue {
                     if (_forNum - 1 === this.lockFinishNum) {
                         break;
                     }
-                    if (!this.enable) {
+                    if (this._clearAlllock) {
                         this.unlock();
-                        throw new Error("thread is stoped");
+                        throw new Error("thread is clear");
                     }
                     yield sleep(100);
                 }
@@ -92,6 +94,9 @@ class BlockingQueue {
     }
     unlock() {
         this.lockFinishNum++;
+    }
+    clearAllWaitLock() {
+        this._clearAlllock = true;
     }
 }
 exports.BlockingQueue = BlockingQueue;

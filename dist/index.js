@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BlockingQueue = exports.sleep = void 0;
+exports.getBlockingQueue = exports.BlockingQueue = exports.sleep = void 0;
 function sleep(t) { return new Promise((r) => setTimeout(r, t)); }
 exports.sleep = sleep;
 ;
@@ -78,11 +78,12 @@ class BlockingQueue {
             let _forNum = this.lockWaitNum;
             yield this.push(() => __awaiter(this, void 0, void 0, function* () {
                 while (true) {
-                    if (_forNum === this.lockFinishNum) {
+                    if (_forNum - 1 === this.lockFinishNum) {
                         break;
                     }
                     if (!this.enable) {
-                        break;
+                        this.unlock();
+                        throw new Error("thread is stoped");
                     }
                     yield sleep(100);
                 }
@@ -94,3 +95,11 @@ class BlockingQueue {
     }
 }
 exports.BlockingQueue = BlockingQueue;
+let queues = {};
+function getBlockingQueue(name = "main") {
+    if (!queues[name]) {
+        queues[name] = new BlockingQueue();
+    }
+    return queues[name];
+}
+exports.getBlockingQueue = getBlockingQueue;

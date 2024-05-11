@@ -12,7 +12,7 @@ export class BlockingQueue {
     lockWaitNum: number = 0;
     lockFinishNum: number = 0;
 
-    constructor( private interval: number = 50) {
+    constructor(private interval: number = 50) {
         (async () => {
             while (true) {
                 let item = this.queue.shift();
@@ -72,18 +72,27 @@ export class BlockingQueue {
         let _forNum = this.lockWaitNum;
         await this.push(async () => {
             while (true) {
-                if(_forNum === this.lockFinishNum){
+                if (_forNum - 1 === this.lockFinishNum) {
                     break;
                 }
-                if(!this.enable){
-                    break;
+                if (!this.enable) {
+                    this.unlock();
+                    throw new Error("thread is stoped")
                 }
                 await sleep(100)
             }
         })
     }
-    unlock(){
-       this.lockFinishNum++; 
+    unlock() {
+        this.lockFinishNum++;
     }
 }
 
+let queues: Record<string, BlockingQueue> = {};
+
+export function getBlockingQueue(name: string="main"): BlockingQueue {
+    if (!queues[name]) {
+        queues[name] = new BlockingQueue();
+    }
+    return queues[name];
+}

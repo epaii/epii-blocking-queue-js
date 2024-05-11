@@ -20,3 +20,4 @@ export declare class BlockingQueue {
     lock(): Promise<void>;
     unlock(): void;
 }
+export declare function getBlockingQueue(name?: string): BlockingQueue;
